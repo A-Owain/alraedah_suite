@@ -706,7 +706,6 @@ st.markdown(
 # SIDEBAR (About & Info)
 # -------------------------------------------------
 with st.sidebar:
-    st.image("assets/images/logo.png", use_container_width=True)
     st.markdown("### About Internal Hub")
     st.caption(
         "An internal tool developed for **Alraedah Finance** to automatically generate "
