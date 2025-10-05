@@ -1,0 +1,8 @@
+streamlit
+pandas
+Pillow
+qrcode
+reportlab
+arabic-reshaper
+python-bidi
+openpyxl

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 1440 837">
+  <!-- Generator: Adobe Illustrator 29.7.1, SVG Export Plug-In . SVG Version: 2.1.1 Build 8)  -->
+  <defs>
+    <style>
+      .st0, .st1 {
+        fill: none;
+      }
+
+      .st2 {
+        fill: url(#radial-gradient);
+      }
+
+      .st3 {
+        fill: url(#linear-gradient);
+      }
+
+      .st1 {
+        isolation: isolate;
+        opacity: .45;
+      }
+
+      .st4 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="st0" y="0" width="1440" height="837"/>
+    </clipPath>
+    <linearGradient id="linear-gradient" x1="314.23" y1="696.1" x2="1127.79" y2="136.05" gradientTransform="translate(0 835.28) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1b2741"/>
+      <stop offset="1" stop-color="#2f3a96"/>
+    </linearGradient>
+    <radialGradient id="radial-gradient" cx="509.84" cy="714.59" fx="509.84" fy="714.59" r="1" gradientTransform="translate(-532841.85 -379665) rotate(90) scale(747 -747)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d1326"/>
+      <stop offset="1" stop-color="#0d1326" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g class="st4">
+    <g>
+      <rect class="st3" y="0" width="1440" height="837"/>
+      <circle class="st2" cx="959" cy="1185" r="747"/>
+      <rect class="st1" x="29.78" y="-514.66" width="1306.02" height="2570.4" transform="translate(-334.45 611.94) rotate(-39.59)"/>
+    </g>
+  </g>
+</svg>
