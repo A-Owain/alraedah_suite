@@ -444,7 +444,6 @@ st.download_button(
 # -------------------------------------------------
 # GENERATION MODE SECTION
 # -------------------------------------------------
-
 st.divider()
 st.subheader("Generation Mode")
 st.caption("Generate for a single employee or upload an Excel for many.")
@@ -457,7 +456,9 @@ mode = st.radio(
     horizontal=True
 )
 
-# --- Only show the Excel Template download when Batch is selected ---
+# -------------------------------------------------
+# ONLY SHOW TEMPLATE SECTION WHEN BATCH MODE IS SELECTED
+# -------------------------------------------------
 if mode == "Batch Upload (via Excel Template)":
     st.divider()
     st.subheader("Excel Template")
@@ -468,16 +469,30 @@ if mode == "Batch Upload (via Excel Template)":
     include_samples = st.checkbox(
         "Include sample rows",
         value=True,
-        key=f"tpl_samples_{mode}"
+        key="tpl_samples_batch"
     )
 
     st.download_button(
         "Download Excel Template",
         build_excel_template_bytes(include_samples=include_samples),
         file_name="alraedah_template.xlsx",
-        key=f"btn_download_template_{mode}",
+        key="btn_download_template_batch",
         use_container_width=True
     )
+
+# -------------------------------------------------
+# OUTPUT TYPE SECTION
+# -------------------------------------------------
+st.divider()
+st.subheader("Output Type")
+st.caption("Select which assets you want to include in your ZIP file.")
+
+download_options = st.multiselect(
+    "Choose what to include:",
+    ["Full Package (All Files)", "Business Cards Only", "Email Signatures Only"],
+    default=["Full Package (All Files)"],
+    key=f"dl_scenarios_{mode}"
+)
 
 # ---------- SINGLE ----------
 if mode == "Single Employee Entry":
