@@ -50,8 +50,8 @@ FONT_BOLD_PATH = "assets/Fonts/PingAR+LT-Bold.ttf"
 FONT_REGULAR_PATH = "assets/Fonts/PingAR+LT-Regular.ttf"
 
 # Backgrounds for signatures
-SIG_BG_EN = "assets/images/eng-bg.png"
-SIG_BG_AR = "assets/images/arbc-bg.png"
+SIG_BG_EN = "assets/Images/eng-bg.png"
+SIG_BG_AR = "assets/Images/arbc-bg.png"
 
 # Business card faces
 CARD_FRONT = "assets/Images/front.png"
