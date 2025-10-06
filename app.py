@@ -333,63 +333,6 @@ def business_card_pdf(person: dict) -> bytes:
     c.save()
     return buf.getvalue()
 
-def business_card_pdf_cmyk(person: dict) -> bytes:
-    """Print-ready business card in CMYK color space."""
-    buf = io.BytesIO()
-    W, H = 90 * mm, 50 * mm
-    margin = 8 * mm
-    c = canvas.Canvas(buf, pagesize=(W, H))
-
-    # Front
-    front_img = Image.open(CARD_FRONT).convert("CMYK")
-    c.drawImage(ImageReader(front_img), 0, 0, W, H)
-    c.setFillColorCMYK(0.86, 0.69, 0.00, 0.48)  # CMYK of #254489
-
-    # English top-left
-    c.setFont("PingBold", 7)
-    en_name = f"{person.get('First_Name', '')} {person.get('Last_Name', '')}".strip()
-    c.drawString(margin, H - margin - 5, en_name)
-
-    c.setFont("PingRegular", 7)
-    en_role = person.get("Role", "") or ""
-    c.drawString(margin, H - margin - 16.5, en_role)
-
-    # English contacts bottom-left
-    c.drawString(margin, margin + 13, person.get("Email", "") or "")
-    c.drawString(margin, margin, person.get("Mobile", "") or "")
-
-    # Arabic top-right (right aligned)
-    ar_name = arabic_ready(person.get("Arabic_Name", "") or "")
-    ar_role = arabic_ready(ROLES_MAP.get(en_role, en_role))
-
-    def draw_right(font_name, size, x_right, y_top_from_edge):
-        c.setFont(font_name, size)
-        return lambda text: c.drawString(
-            x_right - pdfmetrics.stringWidth(text, font_name, size),
-            H - y_top_from_edge,
-            text
-        )
-
-    if ar_name:
-        draw_right("PingBold", 7, W - margin, (margin + 5))(ar_name)
-    if ar_role:
-        draw_right("PingRegular", 7, W - margin, (margin + 16.5))(ar_role)
-
-    # QR bottom-right (transparent QR in CMYK)
-    vcf = vcard_from_person(person)
-    qr_png = make_qr_png_bytes(vcf, fill_color=COLOR_HEX)
-    qr_img = Image.open(io.BytesIO(qr_png)).convert("CMYK")
-    qr_w = 19 * mm
-    c.drawImage(ImageReader(qr_img), W - margin - qr_w + 1 * mm, margin - 1 * mm, qr_w, qr_w)
-
-    # Back
-    back_img = Image.open(CARD_BACK).convert("CMYK")
-    c.showPage()
-    c.drawImage(ImageReader(back_img), 0, 0, W, H)
-    c.save()
-    return buf.getvalue()
-
-
 # -------------------------------------------------
 # ZIP WRITERS (with optional root prefix for batch)
 # -------------------------------------------------
@@ -407,10 +350,7 @@ def write_full_package_to_zip(zipf: zipfile.ZipFile, p: dict, root: str="") -> N
 
     zipf.writestr(_join_root(root, f"{folder}/Signature_EN.pdf"), signature_en_pdf(p))
     zipf.writestr(_join_root(root, f"{folder}/Signature_AR.pdf"), signature_ar_pdf(p))
-    if print_ready:
-        zipf.writestr(_join_root(root, f"{folder}/BusinessCard_PrintReady.pdf"), business_card_pdf_cmyk(p))
-    else:
-        zipf.writestr(_join_root(root, f"{folder}/BusinessCard.pdf"), business_card_pdf(p))
+    zipf.writestr(_join_root(root, f"{folder}/BusinessCard.pdf"), business_card_pdf(p))
 
     vcf = vcard_from_person(p)
     base = f"{first}_{last}".replace(" ","_")
@@ -523,8 +463,6 @@ download_options = st.multiselect(
     default=["Full Package (All Files)"],
     key=f"dl_scenarios_{mode}"
 )
-
-print_ready = st.checkbox("🖨️ Generate print-ready CMYK business cards", value=False)
 
 # ---------- SINGLE ----------
 if mode == "Single Employee Entry":
@@ -736,8 +674,6 @@ elif mode == "Batch Upload (via Excel Template)":
                         "Location": row.get("Location", ""),
                         "Notes": row.get("Notes", "")
                     }
-
-
 
                     folder_name = f"{safe_root}/{person['First_Name']}_{person['Last_Name']}"
                     if "Full Package (All Files)" in download_options:
