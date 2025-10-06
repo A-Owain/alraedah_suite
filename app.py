@@ -453,6 +453,29 @@ mode = st.radio(
     horizontal=True
 )
 
+# --- Show the Excel Template section ONLY for Batch mode ---
+if mode == "Batch Upload (via Excel Template)":
+    st.divider()
+    st.subheader("Excel Template")
+    st.caption(
+        "Download the official Excel template to add employee details in bulk. "
+        "Once filled, upload it below to instantly generate all email signatures and business cards."
+    )
+
+    include_samples = st.checkbox("Include sample rows", value=True, key="tpl_samples")
+
+    st.download_button(
+        "Download Excel Template",
+        build_excel_template_bytes(include_samples=include_samples),
+        file_name="alraedah_template.xlsx",
+        key="btn_download_template",
+        use_container_width=True
+    )
+
+# -------------------------------------------------
+# OUTPUT TYPE SECTION (applies to both modes)
+# -------------------------------------------------
+
 st.divider()
 st.subheader("Output Type")
 st.caption("Select which assets you want to include in your ZIP file.")
