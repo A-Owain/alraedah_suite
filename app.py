@@ -427,7 +427,11 @@ st.caption(
     "Download the official Excel template to add employee details in bulk. "
     "Once filled, upload it below to instantly generate all email signatures and business cards."
 )
-include_samples = st.checkbox("Include sample rows", value=True, key="tpl_samples")
+include_samples = st.checkbox(
+    "Include sample rows",
+    value=True,
+    key=f"tpl_samples_{mode}"
+)
 
 st.download_button(
     "Download Excel Template",
