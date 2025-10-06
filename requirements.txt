@@ -1,6 +1,6 @@
 streamlit
 pandas
-Pillow
+pillow
 qrcode
 reportlab
 arabic-reshaper
