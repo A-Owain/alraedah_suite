@@ -7,7 +7,7 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 import qrcode, qrcode.image.svg
 
 # ReportLab (PDF)
@@ -29,6 +29,21 @@ from openpyxl import Workbook
 # -------------------------------------------------
 
 APP_TITLE = "Internal Hub"
+
+# --- Light styling for DataFrame header
+st.markdown("""
+<style>
+[data-testid="stDataFrame"] table {
+    border: 1px solid #e8ecf2;
+    border-radius: 8px;
+}
+[data-testid="stDataFrame"] th {
+    background-color: #f5f8fc !important;
+    color: #254489 !important;
+    font-weight: 600 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Fonts (must be valid TTFs with Arabic glyphs)
 FONT_BOLD_PATH = "assets/Fonts/PingAR+LT-Bold.ttf"
@@ -128,7 +143,6 @@ ROLES_MAP = {
 # -------------------------------------------------
 
 def arabic_ready(text: str) -> str:
-    """Shape + bidi Arabic so it displays connected (not mirrored)."""
     return get_display(arabic_reshaper.reshape(text)) if text else ""
 
 def normalize_saudi_mobile(mobile: str) -> tuple[str, bool]:
@@ -174,12 +188,10 @@ NOTE:{notes}
 END:VCARD"""
 
 def make_qr_png_bytes(data: str, fill_color="#254489") -> bytes:
-    """Transparent-background QR PNG."""
     qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
     qr.add_data(data or "")
     qr.make(fit=True)
     img = qr.make_image(fill_color=fill_color, back_color="white").convert("RGBA")
-    # strip white to transparency
     pixels = img.getdata()
     img.putdata([(r,g,b,0) if r>240 and g>240 and b>240 else (r,g,b,a) for (r,g,b,a) in pixels])
     buf = io.BytesIO(); img.save(buf, format="PNG"); return buf.getvalue()
@@ -194,14 +206,10 @@ def make_qr_svg_bytes(data: str) -> bytes:
 # Email Signatures (PDF with offsets)
 # -------------------------------------------------
 
-OFFSET_EN = 15   # adjust until EN lines match PNG
-OFFSET_AR = 30   # adjust until AR lines match PNG
+OFFSET_EN = 15
+OFFSET_AR = 30
 
-# -------------------------------------------------
-# SIGNATURE DIMENSIONS (exact coordinates + sizes)
-# -------------------------------------------------
-
-# English signature
+# English signature positions
 EN_NAME_SIZE = 175
 EN_ROLE_SIZE = 88
 EN_TEXT_SIZE = 88
@@ -211,7 +219,7 @@ EN_EMAIL_X, EN_EMAIL_Y = 3052.323, 1245.3644
 EN_WEB_X, EN_WEB_Y = 3052.323, 1393.1144
 EN_MOB_X, EN_MOB_Y = 3052.323, 1540.8684
 
-# Arabic signature
+# Arabic signature positions
 AR_NAME_SIZE = 175
 AR_ROLE_SIZE = 88
 AR_TEXT_SIZE = 88
@@ -222,25 +230,20 @@ AR_WEB_X, AR_WEB_Y = 2519.613, 1363.1202
 AR_MOB_X, AR_MOB_Y = 2519.613, 1510.8741
 
 def signature_en_pdf(person: dict) -> bytes:
-    """English signature with image background + offset fix."""
     bg_img = Image.open(SIG_BG_EN).convert("RGBA")
     W, H = bg_img.size
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(W, H))
     c.drawImage(ImageReader(bg_img), 0, 0, W, H)
-
     c.setFillColorRGB(*COLOR_RGB_REPORTLAB)
 
-    # Name
     c.setFont("PingBold", EN_NAME_SIZE)
     name = f"{person.get('First_Name','')} {person.get('Last_Name','')}"
     c.drawString(EN_NAME_X, H - EN_NAME_Y - OFFSET_EN, name)
 
-    # Role
     c.setFont("PingRegular", EN_ROLE_SIZE)
     c.drawString(EN_ROLE_X, H - EN_ROLE_Y - OFFSET_EN, person.get("Role", "") or "")
 
-    # Contacts
     c.setFont("PingRegular", EN_TEXT_SIZE)
     if person.get("Email"):
         c.drawString(EN_EMAIL_X, H - EN_EMAIL_Y - OFFSET_EN, person["Email"])
@@ -253,21 +256,17 @@ def signature_en_pdf(person: dict) -> bytes:
     return buf.getvalue()
 
 def signature_ar_pdf(person: dict) -> bytes:
-    """Arabic signature with image background + offset fix."""
     bg_img = Image.open(SIG_BG_AR).convert("RGBA")
     W, H = bg_img.size
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(W, H))
     c.drawImage(ImageReader(bg_img), 0, 0, W, H)
-
     c.setFillColorRGB(*COLOR_RGB_REPORTLAB)
 
-    # Arabic-prepared strings
     name_ar_raw = person.get("Arabic_Name", "") or ""
     role_en = person.get("Role", "") or ""
     role_ar_raw = ROLES_MAP.get(role_en, role_en)
 
-    # Directly draw selectable Arabic
     if name_ar_raw:
         c.setFont("PingBold", AR_NAME_SIZE)
         c.drawRightString(AR_NAME_X, H - AR_NAME_Y - OFFSET_AR, arabic_ready(name_ar_raw))
@@ -275,7 +274,6 @@ def signature_ar_pdf(person: dict) -> bytes:
         c.setFont("PingRegular", AR_ROLE_SIZE)
         c.drawRightString(AR_ROLE_X, H - AR_ROLE_Y - OFFSET_AR, arabic_ready(role_ar_raw))
 
-    # Contacts (EN, right-aligned)
     c.setFont("PingRegular", AR_TEXT_SIZE)
     if person.get("Email"):
         c.drawRightString(AR_EMAIL_X, H - AR_EMAIL_Y - OFFSET_AR, person["Email"])
@@ -297,11 +295,9 @@ def business_card_pdf(person: dict) -> bytes:
     margin = 8*mm
     c = canvas.Canvas(buf, pagesize=(W, H))
 
-    # Front
     c.drawImage(CARD_FRONT, 0, 0, W, H)
     c.setFillColorRGB(*COLOR_RGB_REPORTLAB)
 
-    # English top-left
     c.setFont("PingBold", 7)
     en_name = f"{person.get('First_Name','')} {person.get('Last_Name','')}".strip()
     c.drawString(margin, H - margin - 5, en_name)
@@ -310,15 +306,12 @@ def business_card_pdf(person: dict) -> bytes:
     en_role = person.get("Role","") or ""
     c.drawString(margin, H - margin - 16.5, en_role)
 
-    # English contacts bottom-left
     c.drawString(margin, margin + 13, person.get("Email","") or "")
     c.drawString(margin, margin,       person.get("Mobile","") or "")
 
-    # Arabic top-right (selectable)
     ar_name = arabic_ready(person.get("Arabic_Name","") or "")
     ar_role = arabic_ready(ROLES_MAP.get(en_role, en_role))
 
-    # Right align by measuring width
     def draw_right(font_name, size, x_right, y_top_from_edge):
         c.setFont(font_name, size)
         return lambda text: c.drawString(x_right - pdfmetrics.stringWidth(text, font_name, size),
@@ -329,14 +322,12 @@ def business_card_pdf(person: dict) -> bytes:
     if ar_role:
         draw_right("PingRegular", 7, W - margin, (margin + 16.5))(ar_role)
 
-    # QR bottom-right (transparent background PNG)
     vcf = vcard_from_person(person)
     qr_png = make_qr_png_bytes(vcf, fill_color=COLOR_HEX)
     qr_img = Image.open(io.BytesIO(qr_png)).convert("RGBA")
     qr_w = 19*mm
     c.drawImage(ImageReader(qr_img), W - margin - qr_w + 1*mm, margin - 1*mm, qr_w, qr_w, mask="auto")
 
-    # Back
     c.showPage()
     c.drawImage(CARD_BACK, 0, 0, W, H)
     c.save()
@@ -404,17 +395,17 @@ def build_excel_template_bytes(include_samples: bool=True) -> bytes:
     out = io.BytesIO(); wb.save(out); out.seek(0); return out.getvalue()
 
 # -------------------------------------------------
-# STREAMLIT STATE HELPERS (dependent dropdown)
+# STREAMLIT STATE HELPERS
 # -------------------------------------------------
 
 def ensure_session_defaults():
     if "selected_department" not in st.session_state:
         st.session_state.selected_department = list(DEPARTMENTS.keys())[0]
-    if "selected_role" not in st.session_state:
-        st.session_state.selected_role = DEPARTMENTS[st.session_state.selected_department][0]
+    if "role_select" not in st.session_state:
+        st.session_state.role_select = DEPARTMENTS[st.session_state.selected_department][0]
 
 # -----------------------------
-# HEADER SECTION (Public-ready)
+# HEADER
 # -----------------------------
 st.markdown(
     """
@@ -434,8 +425,7 @@ st.divider()
 st.subheader("Excel Template")
 st.caption(
     "Download the official Excel template to add employee details in bulk. "
-    "Once filled, upload it below to instantly generate all email signatures and business cards — "
-    "accurate, bilingual, and ready to use."
+    "Once filled, upload it below to instantly generate all email signatures and business cards."
 )
 include_samples = st.checkbox("Include sample rows", value=True, key="tpl_samples")
 
@@ -447,18 +437,20 @@ st.download_button(
     use_container_width=True
 )
 
+# -------------------------------------------------
+# GENERATION MODE SECTION
+# -------------------------------------------------
+
 st.divider()
 st.subheader("Generation Mode")
-st.caption(
-    "Choose how you’d like to generate materials — either for a single employee "
-    "or for multiple employees using the Excel template."
-)
+st.caption("Generate for a single employee or upload an Excel for many.")
 
 mode = st.radio(
     "Select a generation method:",
     ["Single Employee Entry", "Batch Upload (via Excel Template)"],
     index=0,
-    key="mode_radio"
+    key="mode_radio",
+    horizontal=True
 )
 
 st.divider()
@@ -469,7 +461,7 @@ download_options = st.multiselect(
     "Choose what to include:",
     ["Full Package (All Files)", "Business Cards Only", "Email Signatures Only"],
     default=["Full Package (All Files)"],
-    key="dl_scenarios"
+    key=f"dl_scenarios_{mode}"
 )
 
 # ---------- SINGLE ----------
@@ -477,69 +469,70 @@ if mode == "Single Employee Entry":
     ensure_session_defaults()
 
     st.markdown("#### Employee Details")
-    with st.form("single_form"):
-        # --- Basic info ---
-        first_in = st.text_input("First Name")
-        last_in  = st.text_input("Last Name")
-        first = normalize_name(first_in)
-        last  = normalize_name(last_in)
-        arabic_name = st.text_input("Arabic Name (AR)")
+    first_in = st.text_input("First Name", key="first_name")
+    last_in  = st.text_input("Last Name",  key="last_name")
+    first = normalize_name(first_in)
+    last  = normalize_name(last_in)
+    arabic_name = st.text_input("Arabic Name (AR)", key="arabic_name")
 
-        st.divider()
-        st.markdown("#### Department & Role")
+    st.divider()
+    st.markdown("#### Department & Role")
 
-        # Department (standalone select)
-        dept = st.selectbox(
-            "Department",
-            list(DEPARTMENTS.keys()),
-            index=list(DEPARTMENTS.keys()).index(st.session_state.selected_department),
-            key="dep_select"
-        )
+    dept_keys = list(DEPARTMENTS.keys())
+    default_dept = st.session_state.get("selected_department", dept_keys[0])
+    dept = st.selectbox(
+        "Department",
+        dept_keys,
+        index=dept_keys.index(default_dept),
+        key="dep_select",
+        help="Choosing a department updates the role list."
+    )
 
-        # ✨ Trick: refresh button inside form to update roles manually
-        refresh_roles = st.form_submit_button("↻ Refresh Roles", use_container_width=False)
+    if dept != st.session_state.get("selected_department"):
+        st.session_state.selected_department = dept
+        st.session_state.role_select = DEPARTMENTS[dept][0]
 
-        # Handle role logic
-        if refresh_roles:
-            st.session_state.selected_department = dept
-            st.session_state.selected_role = DEPARTMENTS[dept][0]
+    roles_for_dept = DEPARTMENTS.get(st.session_state.selected_department, [])
+    if roles_for_dept and st.session_state.get("role_select") not in roles_for_dept:
+        st.session_state.role_select = roles_for_dept[0]
 
-        roles_for_dept = DEPARTMENTS.get(st.session_state.selected_department, [])
-        current_role = st.session_state.get("selected_role", roles_for_dept[0])
-        if current_role not in roles_for_dept:
-            current_role = roles_for_dept[0]
-            st.session_state.selected_role = current_role
+    role = st.selectbox(
+        "Role",
+        roles_for_dept,
+        index=roles_for_dept.index(st.session_state.role_select) if roles_for_dept else 0,
+        key="role_select"
+    )
 
-        role = st.selectbox(
-            "Role",
-            roles_for_dept,
-            index=roles_for_dept.index(current_role),
-            key="role_select"
-        )
-        st.session_state.selected_role = role
+    st.divider()
+    st.markdown("#### Contact Information")
 
-        st.divider()
-        st.markdown("#### Contact Information")
+    company = st.text_input("Company", key="company")
+    mobile_raw = st.text_input("Mobile (05..., 5...., 966..., +966...)", key="mobile_raw")
+    mobile_norm, _ = normalize_saudi_mobile(mobile_raw)
+    email_raw = st.text_input("Email", key="email_raw")
+    email_norm, _ = normalize_email(email_raw)
+    website = st.text_input("Website", key="website")
+    location = st.text_input("Location", key="location")
+    gmap_link = st.text_input("Google Maps Link (Optional)", key="gmap")
+    notes = st.text_area("Notes", height=60, key="notes")
 
-        company = st.text_input("Company")
-        mobile_raw = st.text_input("Mobile (05..., 5...., 966..., +966...)")
-        mobile_norm, _ = normalize_saudi_mobile(mobile_raw)
-        email_raw = st.text_input("Email")
-        email_norm, _ = normalize_email(email_raw)
-        website = st.text_input("Website")
-        location = st.text_input("Location")
-        gmap_link = st.text_input("Google Maps Link (Optional)")
-        notes = st.text_area("Notes", height=60)
+    # Generate button
+    submitted_single = st.button("Generate", use_container_width=True, key="btn_generate_single")
 
-        submitted = st.form_submit_button("Generate", use_container_width=True)
-
-    # --- After submission ---
-    if submitted:
+    if submitted_single:
         person = {
-            "First_Name": first, "Last_Name": last, "Arabic_Name": arabic_name,
-            "Department": dept, "Role": role, "Company": company,
-            "Mobile": mobile_norm, "Email": email_norm, "Website": website,
-            "Location": location, "Google_Maps_Link": gmap_link, "Notes": notes
+            "First_Name": first,
+            "Last_Name": last,
+            "Arabic_Name": arabic_name,
+            "Department": dept,
+            "Role": st.session_state.role_select or "",
+            "Company": company,
+            "Mobile": mobile_norm,
+            "Email": email_norm,
+            "Website": website,
+            "Location": location,
+            "Google_Maps_Link": gmap_link,
+            "Notes": notes
         }
 
         zip_buf = io.BytesIO()
@@ -552,6 +545,7 @@ if mode == "Single Employee Entry":
                 write_signature_flat(zipf, person)
         zip_buf.seek(0)
 
+        st.success("ZIP package ready! Click below to download.")
         st.download_button(
             "⬇️ Download ZIP",
             zip_buf,
@@ -561,133 +555,143 @@ if mode == "Single Employee Entry":
         )
 
 # ---------- BATCH ----------
-else:
-    uploaded = st.file_uploader("Upload Excel (.xlsx) with Employees sheet", type=["xlsx"], key="uploader_xlsx")
+elif mode == "Batch Upload (via Excel Template)":
+    st.markdown("#### Upload Excel Template")
+    batch_file = st.file_uploader("Upload your Excel file", type=["xlsx"], key="batch_upload")
 
-    # NEW: custom batch root folder name
-    default_batch_name = f"Batch_Outputs_{datetime.now().strftime('%Y%m%d')}"
-    batch_root_name = st.text_input("Batch Folder Name (Optional)", value=default_batch_name, help="Used as the ZIP filename and the root folder inside the ZIP.")
+    if batch_file is None:
+        st.info("Upload the Excel template to continue.")
+    else:
+        try:
+            df = pd.read_excel(batch_file).fillna("")
+            st.success(f"Loaded {len(df)} rows from Excel file.")
+        except Exception as e:
+            st.error(f"Failed to read Excel file: {e}")
+            st.stop()
 
-    if uploaded:
-        try: df = pd.read_excel(uploaded, sheet_name="Employees")
-        except Exception: df = pd.read_excel(uploaded)
+        # Map and normalize
+        mapped = df.rename(columns={
+            "First Name": "First_Name",
+            "Last Name": "Last_Name",
+            "Arabic Name (AR)": "Arabic_Name",
+            "Department": "Department",
+            "Role": "Role",
+            "Company": "Company",
+            "Mobile": "Mobile",
+            "Email": "Email",
+            "Website": "Website",
+            "Location": "Location",
+            "Google Maps Link (Optional)": "Google_Maps_Link",
+            "Notes": "Notes"
+        })
 
-        aliases = {
-            "First_Name": ["First_Name","First Name","First","FName"],
-            "Last_Name":  ["Last_Name","Last Name","Last","LName"],
-            "Arabic_Name":["Arabic_Name","Arabic Name","Name_AR","AR_Name"],
-            "Department": ["Department","Dept"],
-            "Role":       ["Role","Position","Title"],
-            "Company":    ["Company","Org","Organization"],
-            "Mobile":     ["Mobile","Phone","Cell","Mobile_Normalized"],
-            "Email":      ["Email","E-mail","Mail","Email_Normalized"],
-            "Website":    ["Website","Site","URL"],
-            "Location":   ["Location","Address","City"],
-            "Google_Maps_Link":["Google_Maps_Link","Maps","Google Maps Link","GMaps"],
-            "Notes":      ["Notes","Remark","Comment"],
-        }
-        def resolve_col(frame, cands, default=None):
-            for c in cands:
-                if c in frame.columns: return c
-            return default
+        mapped["Mobile_Normalized"], mapped["Mobile_Valid"] = zip(*mapped["Mobile"].map(normalize_saudi_mobile))
+        mapped["Email_Normalized"], mapped["Email_Valid"] = zip(*mapped["Email"].map(normalize_email))
 
-        mapped = pd.DataFrame()
-        for k, cands in aliases.items():
-            col = resolve_col(df, cands)
-            mapped[k] = df[col] if col else ""
+        total = len(mapped)
+        dup_mobile = mapped["Mobile_Normalized"].duplicated(keep=False)
+        dup_email = mapped["Email_Normalized"].duplicated(keep=False)
+        duplicates = mapped[dup_mobile | dup_email]
+        invalids = mapped[~mapped["Email_Valid"] | ~mapped["Mobile_Valid"]]
+        clean_df = mapped[~mapped.index.isin(duplicates.index) & ~mapped.index.isin(invalids.index)]
 
-        mapped["First_Name"] = mapped["First_Name"].apply(normalize_name)
-        mapped["Last_Name"]  = mapped["Last_Name"].apply(normalize_name)
+        clean_count = len(clean_df)
+        invalid_count = len(invalids)
+        duplicate_count = len(duplicates)
 
-        # Normalize contacts
-        em_n, em_ok = [], []
-        for v in mapped["Email"].tolist():
-            n, ok = normalize_email(v); em_n.append(n); em_ok.append(ok)
-        mapped["Email_Normalized"], mapped["Email_Valid"] = em_n, em_ok
+        # Summary card
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #f8fafc, #eef3fa);
+            border: 1px solid #e0e6f0;
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        ">
+        <div style="font-size:17px; font-weight:600; color:#254489; margin-bottom:6px;">
+            📊 Batch Summary
+        </div>
+        <div style="font-size:15px; color:#333;">
+            <span style="font-weight:500;">Total:</span> {total} employees  
+            <br><span style="color:#254489; font-weight:500;">✅ Clean:</span> {clean_count}  
+            <br><span style="color:#9e9e9e; font-weight:500;">⚠️ Duplicates:</span> {duplicate_count}  
+            <br><span style="color:#cc3333; font-weight:500;">❌ Invalid:</span> {invalid_count}
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        mb_n, mb_ok = [], []
-        for v in mapped["Mobile"].tolist():
-            n, ok = normalize_saudi_mobile(v); mb_n.append(n); mb_ok.append(ok)
-        mapped["Mobile_Normalized"], mapped["Mobile_Valid"] = mb_n, mb_ok
+        st.dataframe(
+            mapped[["First_Name", "Last_Name", "Arabic_Name", "Department", "Role", "Company"]],
+            use_container_width=True
+        )
 
-        dup_email  = mapped["Email_Normalized"].duplicated(Keep=False) if hasattr(mapped["Email_Normalized"], 'duplicated') else mapped["Email_Normalized"].duplicated(keep=False)
-        dup_email  = dup_email & mapped["Email_Normalized"].ne("")
-        dup_mobile = mapped["Mobile_Normalized"].duplicated(keep=False) & mapped["Mobile_Normalized"].ne("")
-        duplicates = mapped[dup_email | dup_mobile].copy()
-        invalids   = mapped[(~mapped["Email_Valid"]) | (~mapped["Mobile_Valid"])].copy()
+        # Single text input for ZIP base name (date auto-appended)
+        today_str = datetime.now().strftime("%Y%m%d")
+        custom_zip_base = st.text_input(
+            "📦 Enter ZIP Name Prefix",
+            value="Batch_Outputs",
+            key="batch_zip_prefix",
+            help="Your ZIP file will be named like: <prefix>_YYYYMMDD.zip"
+        )
+        safe_root = re.sub(r"[^A-Za-z0-9._-]+", "_", custom_zip_base).strip("_") or "Batch_Outputs"
+        zip_filename = f"{safe_root}_{today_str}.zip"
 
-        total=len(mapped); invalid_count=len(invalids); duplicate_count=len(duplicates)
-        clean_count = total - len(invalids.index.union(duplicates.index))
+        # Generate button (unique, stable key)
+        clicked_batch = st.button("Generate ZIP Outputs", key="btn_batch_generate", use_container_width=True)
 
-        st.info(f"📊 Batch Summary: {total} rows → {clean_count} clean ✅ | {invalid_count} invalid ❌ | {duplicate_count} duplicates ⚠️")
-        st.dataframe(mapped[["First_Name","Last_Name","Arabic_Name","Department","Role",
-                             "Company","Email_Normalized","Email_Valid",
-                             "Mobile_Normalized","Mobile_Valid","Website","Location","Notes"]])
-
-        if st.button("Generate ZIP Outputs", key="btn_batch_generate", use_container_width=True):
-            safe_root = re.sub(r"[^A-Za-z0-9._-]+", "_", (batch_root_name or default_batch_name)).strip("_") or default_batch_name
+        if clicked_batch:
+            if clean_count == 0:
+                st.warning("No valid employees to generate. Fix the Excel and try again.")
+                st.stop()
 
             zip_buf = io.BytesIO()
-            with zipfile.ZipFile(zip_buf, "w") as zipf:
-                # reports
-                summary = [
-                    "📊 Batch Summary Report","=======================",
+            with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zipf:
+                summary_lines = [
+                    "📊 Batch Summary Report",
+                    "=======================",
                     f"Total Employees: {total}",
-                    f"Clean: {clean_count} ✅", f"Invalid: {invalid_count} ❌", f"Duplicates: {duplicate_count} ⚠️",""
+                    f"Clean: {clean_count} ✅",
+                    f"Invalid: {invalid_count} ❌",
+                    f"Duplicates: {duplicate_count} ⚠️",
+                    "",
+                    f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    ""
                 ]
-                if invalid_count:
-                    summary.append("Invalid Entries:")
-                    for _, r in invalids.iterrows():
-                        who = f"{r.get('First_Name','')} {r.get('Last_Name','')}".strip()
-                        reasons=[]
-                        if not r.get("Email_Valid",True): reasons.append("Email")
-                        if not r.get("Mobile_Valid",True): reasons.append("Mobile")
-                        summary.append(f"- {who}: {', '.join(reasons) or 'Unknown'}")
-                    summary.append("")
-                if duplicate_count:
-                    summary.append("Duplicate Entries (by normalized Email/Mobile):")
-                    for _, r in duplicates.iterrows():
-                        who = f"{r.get('First_Name','')} {r.get('Last_Name','')}".strip()
-                        summary.append(f"- {who} | Email: {r.get('Email_Normalized','')} | Mobile: {r.get('Mobile_Normalized','')}")
-                    summary.append("")
-                summary.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                zipf.writestr(f"{safe_root}/Batch_Summary.txt", "\n".join(summary_lines))
 
-                # write reports under root
-                zipf.writestr(_join_root(safe_root, "Batch_Summary.txt"), "\n".join(summary))
-                if invalid_count:
-                    s = io.StringIO(); invalids.to_csv(s, index=False)
-                    zipf.writestr(_join_root(safe_root, "Reports/Invalid_Entries.csv"), s.getvalue())
-                if duplicate_count:
-                    s = io.StringIO(); duplicates.to_csv(s, index=False)
-                    zipf.writestr(_join_root(safe_root, "Reports/Duplicates.csv"), s.getvalue())
-
-                # outputs
-                for _, row in mapped.iterrows():
+                for _, row in clean_df.iterrows():
                     person = {
-                        "First_Name": row.get("First_Name","") or "",
-                        "Last_Name":  row.get("Last_Name","")  or "",
-                        "Arabic_Name":row.get("Arabic_Name","")or "",
-                        "Department": row.get("Department","") or "",
-                        "Role":       row.get("Role","")       or "",
-                        "Company":    row.get("Company","")    or "",
-                        "Mobile":     row.get("Mobile_Normalized","") or "",
-                        "Email":      row.get("Email_Normalized","")  or "",
-                        "Website":    row.get("Website","")    or "",
-                        "Location":   row.get("Location","")   or "",
-                        "Notes":      row.get("Notes","")      or "",
+                        "First_Name": row.get("First_Name", ""),
+                        "Last_Name": row.get("Last_Name", ""),
+                        "Arabic_Name": row.get("Arabic_Name", ""),
+                        "Department": row.get("Department", ""),
+                        "Role": row.get("Role", ""),
+                        "Company": row.get("Company", ""),
+                        "Mobile": row.get("Mobile_Normalized", ""),
+                        "Email": row.get("Email_Normalized", ""),
+                        "Website": row.get("Website", ""),
+                        "Location": row.get("Location", ""),
+                        "Notes": row.get("Notes", "")
                     }
+
+                    folder_name = f"{safe_root}/{person['First_Name']}_{person['Last_Name']}"
                     if "Full Package (All Files)" in download_options:
-                        write_full_package_to_zip(zipf, person, root=safe_root)
+                        write_full_package_to_zip(zipf, person, root=folder_name)
                     if "Business Cards Only" in download_options:
-                        write_card_flat(zipf, person, root=safe_root)
+                        write_card_flat(zipf, person, root=folder_name)
                     if "Email Signatures Only" in download_options:
-                        write_signature_flat(zipf, person, root=safe_root)
+                        write_signature_flat(zipf, person, root=folder_name)
 
             zip_buf.seek(0)
-            st.download_button("⬇️ Download Batch ZIP", zip_buf,
-                               file_name=f"{safe_root}.zip",
-                               key="batch_download_zip",
-                               use_container_width=True)
+            st.success("ZIP generation completed.")
+            st.download_button(
+                f"⬇️ Download {zip_filename}",
+                zip_buf,
+                file_name=zip_filename,
+                key="batch_download_zip",
+                use_container_width=True
+            )
 
 # -------------------------------------------------
 # FOOTER
