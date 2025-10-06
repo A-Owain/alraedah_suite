@@ -457,16 +457,27 @@ mode = st.radio(
     horizontal=True
 )
 
-st.divider()
-st.subheader("Output Type")
-st.caption("Select which assets you want to include in your ZIP file.")
+# --- Only show the Excel Template download when Batch is selected ---
+if mode == "Batch Upload (via Excel Template)":
+    st.divider()
+    st.subheader("Excel Template")
+    st.caption(
+        "Download the official Excel template to add employee details in bulk. "
+        "Once filled, upload it below to instantly generate all email signatures and business cards."
+    )
+    include_samples = st.checkbox(
+        "Include sample rows",
+        value=True,
+        key=f"tpl_samples_{mode}"
+    )
 
-download_options = st.multiselect(
-    "Choose what to include:",
-    ["Full Package (All Files)", "Business Cards Only", "Email Signatures Only"],
-    default=["Full Package (All Files)"],
-    key=f"dl_scenarios_{mode}"
-)
+    st.download_button(
+        "Download Excel Template",
+        build_excel_template_bytes(include_samples=include_samples),
+        file_name="alraedah_template.xlsx",
+        key=f"btn_download_template_{mode}",
+        use_container_width=True
+    )
 
 # ---------- SINGLE ----------
 if mode == "Single Employee Entry":
