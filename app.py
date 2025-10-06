@@ -407,7 +407,10 @@ def write_full_package_to_zip(zipf: zipfile.ZipFile, p: dict, root: str="") -> N
 
     zipf.writestr(_join_root(root, f"{folder}/Signature_EN.pdf"), signature_en_pdf(p))
     zipf.writestr(_join_root(root, f"{folder}/Signature_AR.pdf"), signature_ar_pdf(p))
-    zipf.writestr(_join_root(root, f"{folder}/BusinessCard.pdf"), business_card_pdf(p))
+    if print_ready:
+        zipf.writestr(_join_root(root, f"{folder}/BusinessCard_PrintReady.pdf"), business_card_pdf_cmyk(p))
+    else:
+        zipf.writestr(_join_root(root, f"{folder}/BusinessCard.pdf"), business_card_pdf(p))
 
     vcf = vcard_from_person(p)
     base = f"{first}_{last}".replace(" ","_")
@@ -520,6 +523,8 @@ download_options = st.multiselect(
     default=["Full Package (All Files)"],
     key=f"dl_scenarios_{mode}"
 )
+
+print_ready = st.checkbox("🖨️ Generate print-ready CMYK business cards", value=False)
 
 # ---------- SINGLE ----------
 if mode == "Single Employee Entry":
@@ -731,6 +736,8 @@ elif mode == "Batch Upload (via Excel Template)":
                         "Location": row.get("Location", ""),
                         "Notes": row.get("Notes", "")
                     }
+
+
 
                     folder_name = f"{safe_root}/{person['First_Name']}_{person['Last_Name']}"
                     if "Full Package (All Files)" in download_options:
