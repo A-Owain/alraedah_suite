@@ -39,8 +39,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Fonts (must be valid TTFs with Arabic glyphs)
-FONT_BOLD_PATH = "assets/Fonts/PingAR+LT-Bold.ttf"
-FONT_REGULAR_PATH = "assets/Fonts/PingAR+LT-Regular.ttf"
+# FONT_BOLD_PATH = "assets/Fonts/PingAR+LT-Bold.ttf"
+# FONT_REGULAR_PATH = "assets/Fonts/PingAR+LT-Regular.ttf"
 
 # Backgrounds for signatures (case-sensitive paths!)
 SIG_BG_EN = "assets/Images/eng-bg.png"
@@ -55,8 +55,8 @@ COLOR_HEX = "#254489"
 COLOR_RGB_REPORTLAB = (0.145, 0.266, 0.537)  # #254489
 
 # Register fonts for ReportLab (used by PDFs)
-pdfmetrics.registerFont(TTFont("PingBold",    FONT_BOLD_PATH))
-pdfmetrics.registerFont(TTFont("PingRegular", FONT_REGULAR_PATH))
+# pdfmetrics.registerFont(TTFont("PingBold",    FONT_BOLD_PATH))
+# pdfmetrics.registerFont(TTFont("PingRegular", FONT_REGULAR_PATH))
 
 # -------------------------------------------------
 # DEPARTMENTS & ROLES
