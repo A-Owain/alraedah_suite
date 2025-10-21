@@ -295,9 +295,9 @@ def business_card_pdf(person: dict) -> bytes:
                                          H - y_top_from_edge, text)
 
     if ar_name:
-        draw_right("PingBold", 7, W - margin, (margin + 5))(ar_name)
+        draw_right(7, W - margin, (margin + 5))(ar_name)
     if ar_role:
-        draw_right("PingRegular", 7, W - margin, (margin + 16.5))(ar_role)
+        draw_right(7, W - margin, (margin + 16.5))(ar_role)
 
     # QR (transparent PNG)
     vcf = vcard_from_person(person)
