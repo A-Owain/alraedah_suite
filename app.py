@@ -39,8 +39,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Fonts (must be valid TTFs with Arabic glyphs)
-# FONT_BOLD_PATH = "assets/Fonts/PingAR+LT-Bold.ttf"
-# FONT_REGULAR_PATH = "assets/Fonts/PingAR+LT-Regular.ttf"
+FONT_BOLD_PATH = "assets/Fonts/PingAR+LT-Bold.ttf"
+FONT_REGULAR_PATH = "assets/Fonts/PingAR+LT-Regular.ttf"
 
 # Backgrounds for signatures (case-sensitive paths!)
 SIG_BG_EN = "assets/Images/eng-bg.png"
@@ -55,8 +55,8 @@ COLOR_HEX = "#254489"
 COLOR_RGB_REPORTLAB = (0.145, 0.266, 0.537)  # #254489
 
 # Register fonts for ReportLab (used by PDFs)
-# pdfmetrics.registerFont(TTFont("PingBold",    FONT_BOLD_PATH))
-# pdfmetrics.registerFont(TTFont("PingRegular", FONT_REGULAR_PATH))
+pdfmetrics.registerFont(TTFont("PingBold",    FONT_BOLD_PATH))
+pdfmetrics.registerFont(TTFont("PingRegular", FONT_REGULAR_PATH))
 
 # -------------------------------------------------
 # DEPARTMENTS & ROLES
@@ -295,9 +295,9 @@ def business_card_pdf(person: dict) -> bytes:
                                          H - y_top_from_edge, text)
 
     if ar_name:
-        draw_right(7, W - margin, (margin + 5))(ar_name)
+        draw_right("PingBold", 7, W - margin, (margin + 5))(ar_name)
     if ar_role:
-        draw_right(7, W - margin, (margin + 16.5))(ar_role)
+        draw_right("PingRegular", 7, W - margin, (margin + 16.5))(ar_role)
 
     # QR (transparent PNG)
     vcf = vcard_from_person(person)
