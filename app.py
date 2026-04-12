@@ -143,7 +143,7 @@ DEPARTMENTS = {
            "Senior DevOps Engineer","Senior Analyst","IT Support Administrator","Outsourced"],
     "Engineering & Data": ["Head of Engineering","Head of Data","Senior Software Engineer","Staff IOS Engineer",
                            "Data Engineer","Associate Data Engineer","Data Analyst","Senior Analyst","Analyst","Outsourced"],
-    "Product": ["Principal","Lead","Senior"],
+    "Product": ["Principal","Lead","Senior","Partnership Product Manager"],
     "Cybersecurity": ["CISO","Cybersecurity Engineer","Cybersecurity Analyst","Threat Intelligence Analyst","Outsourced"],
     "Risk": ["Head of Risk","AVP - Operations Manager","AVP","Credit Manager","Senior Associate","Senior Operations Analyst",
              "Senior Analyst","Credit Underwriting Senior Analyst","Credit Underwriting Analyst","Credit Administration Analyst",
