@@ -156,7 +156,7 @@ DEPARTMENTS = {
     "Direct Lending": ["Head of Sales","Senior Key Accounts Manager","Key Accounts Manager","Sales Manager","Senior Team Leader",
                        "Team Leader","Growth Manager","Growth Consultant II","Growth Consultant I","Growth Associate",
                        "Sales Operations","Business Development Representative","Quality Assurance Specialist"],
-    "Marketing": ["Senior Communication Specialist","Marketing Specialist","Internal Communications Specialist","Social Media Specialist","Marketing Executive"],
+    "Marketing": ["Senior Communication Specialist","Marketing Specialist","Internal Communications","Social Media Specialist","Marketing Executive"],
     "Finance": ["VP - Head of Finance","VP - Finance","Senior Finance Analyst","Senior Financial Associate","Financial Analyst","Financial Associate"]
 }
 
