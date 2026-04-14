@@ -185,7 +185,7 @@ ROLES_MAP = {
     "Growth Associate":"مساعد نمو","Key Accounts Manager":"مدير الحسابات الرئيسية","Senior Key Accounts Manager":"مدير الحسابات الرئيسية أول",
     "Sales Operations":"عمليات المبيعات","Business Development Representative":"ممثل تطوير الأعمال","Quality Assurance Specialist":"أخصائي ضمان الجودة",
     "Senior Communication Specialist":"أخصائي اتصالات أول","Marketing Executive":"تنفيذي تسويق","Social Media Specialist":"أخصائي وسائل التواصل الاجتماعي",
-    "Marketing Specialist":"أخصائي تسويق","Internal Communications Specialist":"أخصائي تواصل داخلي","VP - Head of Finance":"نائب الرئيس - رئيس المالية","VP - Finance":"نائب الرئيس - المالية",
+    "Marketing Specialist":"أخصائي تسويق","Internal Communications":"أخصائي تواصل داخلي","VP - Head of Finance":"نائب الرئيس - رئيس المالية","VP - Finance":"نائب الرئيس - المالية",
     "Senior Financial Associate":"مساعد مالي أول","Financial Associate":"مساعد مالي","Senior Finance Analyst":"محلل مالي أول","Financial Analyst":"محلل مالي"
 }
 
